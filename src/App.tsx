@@ -3,12 +3,18 @@ import './App.css'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { Table,TableBody,TableCell,TableHead,TableHeader,TableRow } from './components/ui/table'
-
-import { useEffect, useState, } from 'react'
+import { useForm } from 'react-hook-form'
+import { useState, } from 'react'
 import { moviesData } from './data/movie_data'
+import {Dialog,DialogContent,DialogHeader,DialogTitle,} from "./components/ui/dialog"
 
 
-
+type MovieFormValues = {
+  title: string
+  year: string
+  genre: string
+  posterURL: string
+}
 
 
 
@@ -17,10 +23,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null);
-  const[title, setTitle] = useState('')
-  const[year, setYear] = useState('')
-  const[genre, setGenre] = useState('')
-  const[posterURL, setPosterURL] = useState('')
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<MovieFormValues>()
   const [showForm, setShowForm] = useState(false);
 
 
@@ -38,78 +41,44 @@ const deleteMovie = (id:number) => {
 
 
 
-const clearMovie = () => {
-  const confirmed = window.confirm('Do You want to clear the form?');
-  if (confirmed) {
 
-    setTitle('');
-    setYear('');
-    setGenre('');
-    setPosterURL('');
-    setEditingId(null);
-  }
-  resetForm();
-}
 
 const editMovie = (id: number) => {
   const movieToEdit = movieList.find((movie) => movie.id === id);
   const confirmed = window.confirm('Do you want to edit this movie?');
   if (!confirmed) return;
 
-  setTitle(movieToEdit.title);
-  setYear(movieToEdit.year.toString());
-  setGenre(movieToEdit.genre);
-  setPosterURL(movieToEdit.posterURL);
-  setEditingId(id);
-
-  setShowForm(true);
+  setValue('title', movieToEdit.title)
+    setValue('year', movieToEdit.year.toString())
+    setValue('genre', movieToEdit.genre)
+    setValue('posterURL', movieToEdit.posterURL)
+    setEditingId(id)
+    setShowForm(true)
 };
 
 
 
-const saveMovie = () => {
-  if (!title || !year || !genre || !posterURL) return;
-
-  if (editingId !== null) {
-    setMovieList((prev) =>
-      prev.map((movie) =>
-        movie.id === editingId
-          ? {
-              ...movie,
-              title,
-              year: Number(year),
-              genre,
-              posterURL: posterURL,
-            }
-          : movie
+  const onSubmit = (data: MovieFormValues) => {
+    if (editingId !== null) {
+      setMovieList((prev) =>
+        prev.map((movie) =>
+          movie.id === editingId
+            ? { ...movie, ...data, year: Number(data.year) }
+            : movie
+        )
       )
-    );
+      setEditingId(null)
+    } else {
+      setMovieList((prev) => [
+        ...prev,
+        { id: Date.now(), ...data, year: Number(data.year) },
+      ])
+    }
+    reset()
+    setShowForm(false)
+  };
 
-    setEditingId(null);
-  } else {
-    setMovieList((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        title,
-        year: Number(year),
-        genre,
-        posterURL: posterURL,
-      },
-    ]);
-  }
 
-  resetForm();
-};
-
-const resetForm = () => {
-  setTitle("");
-  setYear("");
-  setGenre("");
-  setPosterURL("");
-  setEditingId(null);
-  setShowForm(false);
-};
 
 
 const filteredMovies = movieList.filter((movie) =>
@@ -124,18 +93,76 @@ const filteredMovies = movieList.filter((movie) =>
   
     <h1 className='text-5xl font-bold mb-4 text-white py-4'>Welcome to Movie Stream</h1>
     <p className='text-lg mb-8 text-white'>Stream your favorite movies anytime, anywhere.</p>
-    <Button variant="default" size="lg" onClick={() => setShowForm((prev) => !prev)}> + ADD New Movie</Button>
-    {showForm && (
-      <div className='flex flex-row justify-center gap-4 mt-4'>
-        <Input type="text" placeholder='Title of the movie' className='p-2 rounded-md mb-2' onChange={(e)=>setTitle(e.target.value)} value={title} />
-        <Input type="text" placeholder='Year of release' className='p-2 rounded-md mb-2' onChange={(e)=>setYear(e.target.value)} value={year} />
-        <Input type="text" placeholder='Genre' className='p-2 rounded-md mb-2' onChange={(e)=>setGenre(e.target.value)} value={genre} />
-        <Input type='text' placeholder='Poster URL' className='p-2 rounded-md mb-2' onChange={(e)=>setPosterURL(e.target.value)} value={posterURL} />
-        <Button variant="outline" size="sm" onClick={saveMovie}>{editingId !== null ? "Update" : "Submit"}</Button>
-      <Button variant="destructive" size="sm" onClick={()=>clearMovie()}>Clear</Button>
+    <Button variant="default" size="lg" onClick={() => { reset(); setShowForm((prev) => !prev) }}>+ ADD New Movie</Button>
+    <Dialog open={showForm} onOpenChange={(open) => { if (!open) { reset(); setEditingId(null); setShowForm(false) } }}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{editingId !== null ? 'Edit Movie' : 'Add New Movie'}</DialogTitle>
+        </DialogHeader>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className='flex flex-col justify-center gap-4 mt-4'>
+          <div className="flex flex-col">
+            <Input placeholder='Title'{...register('title', { required: 'Title is required' })}
+          className={errors.title ? 'border-red-500' : ''}/>
+        {errors.title && <span className="text-red-400 text-xs mt-1">{errors.title.message}</span>}
+        </div>
+
+      
+      <div className="flex flex-col">
+        <Input
+          placeholder='Year'
+          {...register('year', {
+            required: 'Year is required',
+            pattern: { value: /^\d{4}$/, message: 'Enter a valid 4-digit year' },
+            min: { value: 1888, message: 'Year must be after 1888' },
+            max: { value: new Date().getFullYear(), message: 'Year cannot be in the future' }
+          })}
+          className={errors.year ? 'border-red-500' : ''}
+        />
+        {errors.year && <span className="text-red-400 text-xs mt-1">{errors.year.message}</span>}
       </div>
-    )}
-    {!showForm && (
+
+      
+      <div className="flex flex-col">
+        <Input
+          placeholder='Genre'
+          {...register('genre', {
+            required: 'Genre is required',
+            minLength: { value: 3, message: 'Genre must be at least 3 characters' }
+          })}
+          className={errors.genre ? 'border-red-500' : ''}
+        />
+        {errors.genre && <span className="text-red-400 text-xs mt-1">{errors.genre.message}</span>}
+      </div>
+
+   
+      <div className="flex flex-col">
+        <Input
+          placeholder='Poster URL'
+          {...register('posterURL', {
+            required: 'Poster URL is required',
+            pattern: { value: /^(https?:\/\/|\/).+/, message: 'Enter a valid URL or path' }
+          })}
+          className={errors.posterURL ? 'border-red-500' : ''}
+        />
+        {errors.posterURL && <span className="text-red-400 text-xs mt-1">{errors.posterURL.message}</span>}
+      </div>
+
+      <Button type="submit" variant="outline" size="sm">
+        {editingId !== null ? 'Update' : 'Submit'}
+      </Button>
+      <Button type="button" variant="destructive" size="sm" onClick={() => { reset(); setShowForm(false) }}>
+        Clear
+      </Button>
+
+    </div>
+  </form>
+  </DialogContent>
+
+</Dialog>
+  
+
+    
     <Input className='mt-4' placeholder='Search movies...' 
     value={searchInput}
     onChange={(e) => setSearchInput(e.target.value)}
@@ -146,7 +173,7 @@ const filteredMovies = movieList.filter((movie) =>
       setSearchTerm('');
     }
     }} />
-    )}
+    
 
 
     <div className='mt-8 w-full max-w-4xl bg-muted/20 rounded shadow-xl p-4'>
@@ -201,7 +228,3 @@ export default App
 
 
 
-
-//react hook form
-//validation
-//pop-up(modal for the form)
