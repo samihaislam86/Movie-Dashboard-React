@@ -2,18 +2,19 @@
 export const moviesData = [
     {
         id: 1,  
-        title: 'The Matrix',
-        year: 1999,
+        title: 'Oppenheimer',
+        year: 2023,
         genre: 'Sci-Fi',
-        posterURL: 'https://example.com/matrix-poster.jpg'
+        posterURL:'/oppenheimar.png'
     },
     {
         id: 2,
-        title: 'Inception',
-        year: 2010,
+        title: 'X-Men',
+        year: 2000,
         genre: 'Sci-Fi',
-        posterURL: 'https://example.com/inception-poster.jpg'
+        posterURL: '/xmen.jpg'
     }
+
 
 ]
 

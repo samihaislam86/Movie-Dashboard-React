@@ -11,8 +11,9 @@ import { moviesData } from './data/movie_data'
 
 
 
+
 function App() {
-  const [movieList, setMovieList] = useState<any[]>([])
+  const [movieList, setMovieList] = useState<any[]>(moviesData)
   const [searchTerm, setSearchTerm] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -21,10 +22,6 @@ function App() {
   const[genre, setGenre] = useState('')
   const[posterURL, setPosterURL] = useState('')
   const [showForm, setShowForm] = useState(false);
-
-  useEffect(() => {
-  setMovieList(moviesData);
-}, []);
 
 
 //add, delete, edit functions for movies
@@ -62,7 +59,7 @@ const editMovie = (id: number) => {
   setTitle(movieToEdit.title);
   setYear(movieToEdit.year.toString());
   setGenre(movieToEdit.genre);
-  setPosterURL(movieToEdit.poster);
+  setPosterURL(movieToEdit.posterURL);
   setEditingId(id);
 
   setShowForm(true);
@@ -82,7 +79,7 @@ const saveMovie = () => {
               title,
               year: Number(year),
               genre,
-              poster: posterURL,
+              posterURL: posterURL,
             }
           : movie
       )
@@ -97,7 +94,7 @@ const saveMovie = () => {
         title,
         year: Number(year),
         genre,
-        poster: posterURL,
+        posterURL: posterURL,
       },
     ]);
   }
@@ -152,7 +149,7 @@ const filteredMovies = movieList.filter((movie) =>
     )}
 
 
-    <div className='mt-8 w-full max-w-4xl'>
+    <div className='mt-8 w-full max-w-4xl bg-muted/20 rounded shadow-xl p-4'>
       <Table>
         
         <TableHeader>
@@ -171,11 +168,12 @@ const filteredMovies = movieList.filter((movie) =>
         {filteredMovies.map((movie,index) => (
           <TableRow key={index}>
             <TableCell>{index + 1}</TableCell>
-            <TableCell><img src={movie.posterURL} alt={movie.title} /></TableCell>
+            <TableCell><img src ={movie.posterURL} className="w-16 h-24 object-cover rounded mx-auto" /></TableCell>
             <TableCell>{movie.title}</TableCell>
             <TableCell>{movie.year}</TableCell>
             <TableCell>{movie.genre}</TableCell>
-            <TableCell>
+            <TableCell >
+              <div className="flex justify-center gap-3">
               
               <Button variant="outline" size="sm" onClick={() => editMovie(movie.id)}>
                 Edit
@@ -184,6 +182,7 @@ const filteredMovies = movieList.filter((movie) =>
               <Button variant="destructive" size="sm" onClick={() => deleteMovie(movie.id)}>
                 Delete
               </Button>
+              </div>
             </TableCell>
           </TableRow>
         ))}  
@@ -198,3 +197,11 @@ const filteredMovies = movieList.filter((movie) =>
 }
 
 export default App
+
+
+
+
+
+//react hook form
+//validation
+//pop-up(modal for the form)
