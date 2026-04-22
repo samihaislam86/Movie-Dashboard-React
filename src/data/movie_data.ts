@@ -1,5 +1,6 @@
+import type { Movie } from '../types/Movie_types'
 
-export const moviesData = [
+export const moviesData: Movie[] = [
     {
         id: 1,  
         title: 'Oppenheimer',
